@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+	<style>
+        .popup {
+            background-color: #fff;
+            padding: 0px;
+      
+            width: 100%;
+            text-align: center;
+            position: relative;
+        }
+        .popup h2 {
+            margin-top: 0;
+            font-size: 1.25rem;
+        }
+        .popup label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        .popup input[type="date"] {
+            width: calc(25% - 22px);
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+			align: center;
+        }
+        .popup button {
+            padding: 10px 20px;
+            background-color: #007BFF;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .popup button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+  </head>
+  <body>
+	<form>
+    <div id="popup" class="popup">
+        <label for="months">Decommission Date</label>
+		<input type="date" id="months" placeholder="Enter value"><br>
+		<label for="dropdown">Removal Required</label>
+		<select name="pick" id="pick" required>
+		  <option value="">None</option>
+		  <option value="Yes">Yes</option>
+		  <option value="No">No</option>
+		</select>
+		<label for="desc">Decommission Notes</label>
+		<textarea name="message" rows="10" cols="30" id="notes"></textarea><br>
+        <button type="submit" id="submit-btn">Submit</button><br><br>
+		<label id="Msg"></label>
+    </div>
+	</form>
+	<script src="https://live.zwidgets.com/js-sdk/1.0.5/ZohoEmbededAppSDK.min.js"></script>
+	<script>
+		var Entity_Id = "";
+		ZOHO.embeddedApp.on("PageLoad", function(data) {
+			//console.log("data",data.EntityId);
+			Entity_Id = data.EntityId;
+			ZOHO.CRM.UI.Resize({height:"450",width:"300"}).then(function(data){
+				console.log(data);
+			});
+			ZOHO.CRM.CONFIG.getCurrentUser().then(function(userInfo) {
+			console.log(userInfo.users[0].id);
+			User_ID = userInfo.users[0].id;
+			});
+		});
+		document.getElementById("submit-btn").onclick = function () {
+			var Dec_Date = document.getElementById("months").value;
+			//console.log(Dec_Date);
+			var Rem_Req = document.getElementById("pick").value;
+			console.log(Rem_Req);
+			if(Rem_Req == "")
+			{
+				document.getElementById("Msg").innerHTML = "Please Fill Removal required field";
+			}
+			else
+			{
+				document.getElementById("submit-btn").disabled = true;
+				var Dec_Notes = document.getElementById("notes").value;
+				console.log(Dec_Notes);
+				var func_name = "henry_function_for_creating_jobs";
+				//console.log("data",Entity_Id);
+				var req_data ={
+				  "arguments": JSON.stringify({
+					  "Decommission_Date" : Dec_Date,
+					  "MRR_ID" : Entity_Id,
+					  "User_ID" : User_ID,
+					  "Removal" : Rem_Req,
+					  "Notes" : Dec_Notes
+				  })
+				};
+				//console.log(req_data);
+				ZOHO.CRM.FUNCTIONS.execute(func_name, req_data)
+				.then(function(data){
+					console.log("Run:",data);
+					if(data.details.output == "Error")
+					{
+						alert =("Different Deals and Projects found in Selected Records."); 
+					}
+					else if(data.details.output == "Success")
+					{
+						alert =("Job Created Successfully.");
+					}
+					else if(data.details.output == "No_Deal")
+					{
+						alert =("Error due to no Deal selected for perticular records.");
+					}
+					else if(data.details.output == "NO_PRO")
+					{
+						alert =("Error due to no Project selected for perticular records.");
+					}
+					else if(data.details.output == "Deal")
+					{
+						alert =("Error due to different Deals in selected records.");
+					}
+					else if(data.details.output == "Project")
+					{
+						alert =("Error due to different Projects in selected records.");
+					}
+					else if(data.details.output == "No_Data")
+					{
+						alert =("Error due to no Deal and Project selected for perticular records.");
+					}
+					else
+					{
+						alert =("NO RUN");
+					}
+					document.getElementById("Msg").innerHTML = alert;
+				})
+				setTimeout(function() {
+					ZOHO.CRM.UI.Popup.close().then(function(){
+					});
+				}, 7000);
+			}			
+		};	
+		ZOHO.embeddedApp.init();
+	</script>
+  </body>
+</html>
